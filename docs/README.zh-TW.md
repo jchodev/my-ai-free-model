@@ -148,7 +148,7 @@ curl http://localhost:4570/v1/chat/completions -H "Content-Type: application/jso
 - [x] 0. 專案骨架
 - [x] 1. 驗證 Kilo、OpenRouter、NVIDIA、AMD 的存取
 - [x] 2. 各服務模型探索與過濾
-- [ ] 3. 路由器（延遲、冷卻、去重）與相容 OpenAI 的伺服器
+- [x] 3. 路由器（延遲、冷卻、去重）與相容 OpenAI 的伺服器
 - [ ] 4. 相容 Anthropic 的 `/v1/messages`
 - [ ] 5. OpenCode CLI 備援
 

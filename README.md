@@ -148,7 +148,7 @@ curl http://localhost:4570/v1/chat/completions -H "Content-Type: application/jso
 - [x] 0. Project scaffold
 - [x] 1. Verify access to Kilo, OpenRouter, NVIDIA, AMD
 - [x] 2. Provider model discovery and filtering
-- [ ] 3. Router (latency, cooldown, dedupe) and OpenAI-compatible server
+- [x] 3. Router (latency, cooldown, dedupe) and OpenAI-compatible server
 - [ ] 4. Anthropic-compatible `/v1/messages`
 - [ ] 5. OpenCode CLI fallback
 
