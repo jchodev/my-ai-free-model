@@ -35,6 +35,33 @@
  providers/  kilo · openrouter · nvidia · amd · opencode-cli
 ```
 
+### 請求流程
+
+```mermaid
+flowchart TD
+  C["Client: OpenCode / Cline / Cursor / Claude Code"] -->|"model: free-model or a group"| S["server.js on 127.0.0.1:4570"]
+  S --> G{"Which model name?"}
+  G -->|"free-model"| P["All routes"]
+  G -->|"free-model-fast / coder / thinking"| Q["Routes of that group"]
+  P --> F
+  Q --> F["Filter: enough context, tools, images, not cooling, not disabled"]
+  F --> R["Sort: lowest measured latency first. Not measured yet: Kilo, OpenRouter, NVIDIA, AMD"]
+  R --> T["Try the first route"]
+  T -->|"OK"| OK["Reply to the client and record the latency"]
+  T -->|"429 or 402"| CD["Cooldown 10 min, doubling up to 2 h"]
+  T -->|"5xx or timeout"| CD2["Cooldown 2 min"]
+  T -->|"401 or 403"| X1["Disable that provider"]
+  T -->|"404"| X2["Remove that model"]
+  CD --> N
+  CD2 --> N
+  X1 --> N
+  X2 --> N{"Routes left?"}
+  N -->|"yes"| T
+  N -->|"no"| E["503 with the reason of every route"]
+```
+
+**邊個服務先用？** 冇固定次序。程式按真實請求量度到嘅延遲，最快嗰條路線先用。未有量度數據之前，同速就按 Kilo → OpenRouter → NVIDIA → AMD。所以頭幾次請求可能落喺任何一個服務，之後就會跟速度排序。失敗嘅路線會暫時跳過（冷卻），自動試下一條。
+
 ## 服務一覽
 
 | 服務 | Key | 點樣揀免費模型 | 已知限制 | 驗證結果（2026-10-23） |
@@ -81,7 +108,28 @@ NVIDIA_API_KEY=
 AMD_API_KEY=
 ```
 
-攞 key：[openrouter.ai](https://openrouter.ai) → Keys · [build.nvidia.com](https://build.nvidia.com) → Get API Key · [developer.amd.com.cn/radeon/profile](https://developer.amd.com.cn/radeon/profile)。Kilo 唔使 key。冇填 key 嘅服務會直接跳過。
+### 攞 API Key
+
+每個 key 填入 `.env`（唔好 commit，已經被 git 忽略）。冇 key 嘅服務會直接跳過。網站介面可能會改，掣名未必一模一樣。
+
+**OpenRouter**（`OPENROUTER_API_KEY`）
+1. 登入 [openrouter.ai](https://openrouter.ai)。
+2. 打開 [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) → **Create Key** → 複製（以 `sk-or-` 開頭）。
+3. 貼落 `.env` 入面 `OPENROUTER_API_KEY=` 後面。免費模型唔使增值。
+
+**NVIDIA**（`NVIDIA_API_KEY`）
+1. 登入 [build.nvidia.com](https://build.nvidia.com)（免費 NVIDIA 開發者帳戶，可能要驗證）。
+2. 打開任何一個模型頁 → **Get API Key** → **Generate Key** → 複製（以 `nvapi-` 開頭）。
+3. 貼落 `.env` 入面 `NVIDIA_API_KEY=` 後面。
+
+**AMD**（`AMD_API_KEY`）
+1. 打開 [developer.amd.com.cn/radeon/profile](https://developer.amd.com.cn/radeon/profile)，登入並領取 API Key。
+2. 貼落 `.env` 入面 `AMD_API_KEY=` 後面。
+3. 免費額度係每日 1.0 pt、每分鐘 20 次請求。
+
+**Kilo**：唔使 key。
+
+跟住重新行 `node server.js`。啟動時見到 `keys: {"openrouter":true,"nvidia":true,"amd":true}` 代表搵到邊啲 key（唔會印出 key 本身）。
 
 測試啲 key 用唔用得（已經可以用）：
 

@@ -35,6 +35,33 @@ Your client (model: free-model)
  providers/  kilo · openrouter · nvidia · amd · opencode-cli
 ```
 
+### Request flow
+
+```mermaid
+flowchart TD
+  C["Client: OpenCode / Cline / Cursor / Claude Code"] -->|"model: free-model or a group"| S["server.js on 127.0.0.1:4570"]
+  S --> G{"Which model name?"}
+  G -->|"free-model"| P["All routes"]
+  G -->|"free-model-fast / coder / thinking"| Q["Routes of that group"]
+  P --> F
+  Q --> F["Filter: enough context, tools, images, not cooling, not disabled"]
+  F --> R["Sort: lowest measured latency first. Not measured yet: Kilo, OpenRouter, NVIDIA, AMD"]
+  R --> T["Try the first route"]
+  T -->|"OK"| OK["Reply to the client and record the latency"]
+  T -->|"429 or 402"| CD["Cooldown 10 min, doubling up to 2 h"]
+  T -->|"5xx or timeout"| CD2["Cooldown 2 min"]
+  T -->|"401 or 403"| X1["Disable that provider"]
+  T -->|"404"| X2["Remove that model"]
+  CD --> N
+  CD2 --> N
+  X1 --> N
+  X2 --> N{"Routes left?"}
+  N -->|"yes"| T
+  N -->|"no"| E["503 with the reason of every route"]
+```
+
+**Which provider goes first?** There is no fixed order. The route with the lowest measured latency goes first, learned from real requests. Until a route has been measured, ties go Kilo → OpenRouter → NVIDIA → AMD. So the first requests may land anywhere, and after a few requests the order follows speed. A route that fails is skipped for a while (cooldown) and the next one is tried automatically.
+
 ## Providers
 
 | Provider | Key | How free models are chosen | Known limits | Verified (2026-10-23) |
@@ -81,7 +108,28 @@ NVIDIA_API_KEY=
 AMD_API_KEY=
 ```
 
-Get keys: [openrouter.ai](https://openrouter.ai) → Keys · [build.nvidia.com](https://build.nvidia.com) → Get API Key · [developer.amd.com.cn/radeon/profile](https://developer.amd.com.cn/radeon/profile). Kilo needs none. A provider without a key is simply skipped.
+### Get your API keys
+
+Put each key in `.env` (never commit it; it is git-ignored). A provider without a key is simply skipped. Websites change their layout, so button names may differ slightly.
+
+**OpenRouter** (`OPENROUTER_API_KEY`)
+1. Sign in at [openrouter.ai](https://openrouter.ai).
+2. Open [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) → **Create Key** → copy it (starts with `sk-or-`).
+3. Paste it after `OPENROUTER_API_KEY=` in `.env`. Free models need no credit.
+
+**NVIDIA** (`NVIDIA_API_KEY`)
+1. Sign in at [build.nvidia.com](https://build.nvidia.com) (a free NVIDIA developer account; it may ask for verification).
+2. Open any model page → **Get API Key** → **Generate Key** → copy it (starts with `nvapi-`).
+3. Paste it after `NVIDIA_API_KEY=` in `.env`.
+
+**AMD** (`AMD_API_KEY`)
+1. Open [developer.amd.com.cn/radeon/profile](https://developer.amd.com.cn/radeon/profile), sign in and claim your API Key.
+2. Paste it after `AMD_API_KEY=` in `.env`.
+3. The free allowance is 1.0 pt/day and 20 requests/min.
+
+**Kilo**: no key needed.
+
+Then restart `node server.js`. The start-up line `keys: {"openrouter":true,"nvidia":true,"amd":true}` shows which keys were found (it never prints the keys).
 
 Check that your keys work (already available):
 
