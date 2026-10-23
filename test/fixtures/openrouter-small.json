@@ -1,0 +1,7 @@
+{"data":[
+ {"id":"google/gemma-4-31b-it:free","context_length":131072,"pricing":{"prompt":"0","completion":"0"},"architecture":{"input_modalities":["text","image"],"output_modalities":["text"]},"supported_parameters":["tools"]},
+ {"id":"vendor/zero-priced","context_length":8000,"pricing":{"prompt":"0","completion":"0"},"architecture":{"input_modalities":["text"],"output_modalities":["text"]},"supported_parameters":["tools"]},
+ {"id":"vendor/auto-router","pricing":{"prompt":"-1","completion":"-1"},"architecture":{"output_modalities":["text"]},"supported_parameters":["tools"]},
+ {"id":"vendor/paid","pricing":{"prompt":"0.000001","completion":"0.000002"},"architecture":{"output_modalities":["text"]},"supported_parameters":["tools"]},
+ {"id":"openrouter/free","pricing":{"prompt":"0","completion":"0"},"architecture":{"output_modalities":["text"]},"supported_parameters":["tools"]}
+]}

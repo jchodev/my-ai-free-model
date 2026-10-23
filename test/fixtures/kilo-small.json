@@ -1,0 +1,10 @@
+{"data":[
+ {"id":"kilo-auto/free","isFree":true,"mayTrainOnYourPrompts":true,"context_length":256000,"architecture":{"input_modalities":["text"],"output_modalities":["text"]},"supported_parameters":["tools","reasoning"],"autoRouting":{"models":["a"]}},
+ {"id":"nvidia/nemotron-3.5-super-vl:free","isFree":true,"mayTrainOnYourPrompts":true,"context_length":1000000,"architecture":{"input_modalities":["text","image"],"output_modalities":["text"]},"supported_parameters":["tools"]},
+ {"id":"nvidia/nemotron-3.5-content-safety:free","isFree":true,"context_length":128000,"architecture":{"input_modalities":["text"],"output_modalities":["text"]},"supported_parameters":["max_tokens"]},
+ {"id":"poolside/old-model:free","isFree":true,"expiration_date":"2026-01-01","context_length":1000,"architecture":{"input_modalities":["text"],"output_modalities":["text"]},"supported_parameters":["tools"]},
+ {"id":"poolside/laguna-s-2.1:free","isFree":true,"expiration_date":"2026-10-31","context_length":262144,"architecture":{"input_modalities":["text"],"output_modalities":["text"]},"supported_parameters":["tools"]},
+ {"id":"openrouter/free","isFree":true,"context_length":200000,"architecture":{"input_modalities":["text"],"output_modalities":["text"]},"supported_parameters":["tools"]},
+ {"id":"google/lyria-3-pro-preview","isFree":false,"pricing":{"prompt":"0","completion":"0"},"architecture":{"input_modalities":["text"],"output_modalities":["audio"]},"supported_parameters":[]},
+ {"id":"anthropic/paid-model","isFree":false,"context_length":200000,"architecture":{"input_modalities":["text"],"output_modalities":["text"]},"supported_parameters":["tools"]}
+]}

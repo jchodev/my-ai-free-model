@@ -1,0 +1,79 @@
+{
+  "_comment": "Allow/deny lists. No secrets here. NVIDIA and AMD have no reliable 'free' flag in their model lists, so only allow-listed ids join the pool.",
+  "kilo": {
+    "deny": [
+      "openrouter/free"
+    ]
+  },
+  "openrouter": {
+    "deny": [
+      "openrouter/free"
+    ]
+  },
+  "nvidia": {
+    "allow": [
+      "minimaxai/minimax-m3.1-flash",
+      "nvidia/nemotron-3.5-bolt-e4b",
+      "nvidia/nemotron-3.5-lightning-30b-a3b",
+      "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+      "nvidia/nemotron-3-ultra-550b-a55b",
+      "meta/muse-glimmer-30b",
+      "nvidia/nemotron-3.5-super-vl-120b-a12b"
+    ],
+    "unverified": [
+      "deepseek-ai/deepseek-v4.1-flash",
+      "google/gemma-4-31b-it",
+      "openai/gpt-oss-20b",
+      "z-ai/glm-5.3",
+      "z-ai/glm-5.3-flash",
+      "stepfun-ai/step-5-preview",
+      "meta/llama-3.2-11b-vision-instruct",
+      "meta/llama-3.2-90b-vision-instruct"
+    ],
+    "_note": "2026-10-23 --scan of 60 ids: 7 callable with tools. 'unverified' timed out at 20s (maybe cold/queued, retry with --timeout 90). Most other listed ids return 404. poolside/laguna-xs-2.1 returned 503 ResourceExhausted. riva-translate chats but cannot tool-call (HTTP 400)."
+  },
+  "amd": {
+    "allow": [
+      "DeepSeek-V4.1-Flash",
+      "DeepSeek-V4-Flash",
+      "MiMo-V2.6-Flash",
+      "GLM-5.3-Flash",
+      "Qwen3.8-27B",
+      "Qwen3.8-Flash-Next"
+    ],
+    "_note": "2026-10-23 probe-chat: 5/6 ok with tools (DeepSeek-V4-Flash 1s, Qwen3.8-Flash-Next 2s, Qwen3.8-27B 2.4s, MiMo 2.5s, GLM-5.3-Flash 48s); DeepSeek-V4.1-Flash timed out once (worked earlier)."
+  },
+  "groups": {
+    "_comment": "STARTER lists, not benchmarked. Built from measured latency (probe-chat), reasoning flags and model names. 'match' = substring of the canonical model name. Edit freely; an empty group falls back to the whole pool.",
+    "fast": {
+      "match": [
+        "nemotron-3.5-bolt",
+        "nemotron-3.5-lightning",
+        "lfm-2.5",
+        "qwen3.8-flash-next",
+        "deepseek-v4-flash",
+        "minimax-m3.1-flash"
+      ]
+    },
+    "thinking": {
+      "match": [
+        "nemotron-3-ultra",
+        "nemotron-3.5-super-vl",
+        "nemotron-3-super",
+        "deepseek-v4.1-flash",
+        "glm-5.3",
+        "mimo-v2.6",
+        "qwen3.8-27b",
+        "inkling"
+      ]
+    },
+    "coder": {
+      "match": [
+        "north-mini-code",
+        "qwen3.8",
+        "deepseek-v4",
+        "minimax-m3.1"
+      ]
+    }
+  }
+}

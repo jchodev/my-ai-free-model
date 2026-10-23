@@ -1,0 +1,7 @@
+{"data":[
+ {"id":"Clef","free":false,"output":["decision"],"context_length":0,"providers":[{"tools":false}]},
+ {"id":"DeepSeek-V4.1-Flash","free":false,"output":["text"],"context_length":1048576,"providers":[{"tools":true,"vision":false,"reasoning":false}]},
+ {"id":"GLM-5.3-Flash","free":false,"output":["text"],"context_length":262144,"providers":[{"tools":true}]},
+ {"id":"NoTools-Model","free":false,"output":["text"],"context_length":1000,"providers":[{"tools":false}]},
+ {"id":"Gemma-4-31B-IT","free":false,"output":["text"],"context_length":262144,"providers":[{"tools":true}]}
+]}

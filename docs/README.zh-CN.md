@@ -25,7 +25,7 @@
  server.js  (127.0.0.1:4570)
    ├─ POST /v1/chat/completions   OpenAI 格式，支持流式与 tool calling
    ├─ POST /v1/messages           Anthropic 格式（自动转换）
-   ├─ GET  /v1/models             只列出 "free-model"
+   ├─ GET  /v1/models             列出 "free-model" 及各分组
    └─ GET  /status                各路线延迟与冷却状态
         │
         ▼
@@ -103,11 +103,51 @@ curl -X POST http://localhost:4570/v1/chat/completions \
 
 客户端：base URL 设为 `http://localhost:4570/v1`，模型设为 `free-model`。Claude Code *（规划中，步骤 4）*：`ANTHROPIC_BASE_URL=http://localhost:4570`。
 
+## 模型分组 *（规划中，步骤 3 起）*
+
+用模型名称指定分组，路由器就只会在该组内选择路线和切换路线。空的分组会退回整个池，所以配置写错也不会让服务停摆。
+
+| 模型名称 | 适合用途 | 对应工作流角色 |
+| --- | --- | --- |
+| `free-model` | 任何用途，或不确定时 | — |
+| `free-model-thinking` | 规划、需求、设计、代码评审、编写测试计划 | **PM**、架构师、**QA**（测试设计与评审） |
+| `free-model-coder` | 写代码、改代码、大量使用工具的 Agent 循环 | **Developer（开发）** |
+| `free-model-fast` | 短而快的任务：摘要、commit 信息、简单修改、QA 冒烟检查 | 辅助 Agent、**QA**（快速检查） |
+
+分组成员写在 `pool.config.json` 的 `groups`（按标准化模型名称做子串匹配）。默认列表依据实测延迟、reasoning 标记和模型名称建立，**没有做过质量评测**。运行 `npm run pool` 可以看到各组有哪些路线，欢迎自行调整。
+
+### 示例
+
+Claude Code，一个工具使用三个档位 *（需要步骤 4）*：
+
+```bash
+export ANTHROPIC_BASE_URL=http://localhost:4570
+export ANTHROPIC_AUTH_TOKEN=free-model-local   # 任意非空字符串；服务器只监听 localhost
+export ANTHROPIC_API_KEY=
+export ANTHROPIC_DEFAULT_OPUS_MODEL=free-model-thinking
+export ANTHROPIC_DEFAULT_SONNET_MODEL=free-model-coder
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=free-model-fast
+claude
+```
+
+任何兼容 OpenAI 的客户端（OpenCode、Cline、Cursor…）：base URL 填 `http://localhost:4570/v1`，API 密钥填任意非空字符串，模型填 `free-model-coder`（或表中其他名称）。
+
+```bash
+curl http://localhost:4570/v1/chat/completions -H "Content-Type: application/json" \
+  -d '{"model":"free-model-thinking","messages":[{"role":"user","content":"帮登录表单写一份测试计划"}]}'
+```
+
+### 不支持的项目
+
+- **不支持视频输入和音频输入。** 部分免费模型虽然接受，但本代理不会转发。
+- **图片输入** 只会发往标记为 `vision` 的路线，其余路线仅支持文本。
+- 各模型的 context 窗口不同（65K 到 1M tokens），小于 prompt 的路线会被跳过。
+
 ## 开发进度
 
 - [x] 0. 项目骨架
 - [x] 1. 验证 Kilo、OpenRouter、NVIDIA、AMD 的访问
-- [ ] 2. 各服务模型发现与过滤
+- [x] 2. 各服务模型发现与过滤
 - [ ] 3. 路由器（延迟、冷却、去重）与兼容 OpenAI 的服务器
 - [ ] 4. 兼容 Anthropic 的 `/v1/messages`
 - [ ] 5. OpenCode CLI 备援

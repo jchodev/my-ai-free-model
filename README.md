@@ -25,7 +25,7 @@ Your client (model: free-model)
  server.js  (127.0.0.1:4570)
    ├─ POST /v1/chat/completions   OpenAI format, streaming + tool calling
    ├─ POST /v1/messages           Anthropic format (translated)
-   ├─ GET  /v1/models             only lists "free-model"
+   ├─ GET  /v1/models             lists "free-model" and its groups
    └─ GET  /status                per-route latency and cooldown
         │
         ▼
@@ -103,11 +103,51 @@ curl -X POST http://localhost:4570/v1/chat/completions \
 
 Clients: set the base URL to `http://localhost:4570/v1` and the model to `free-model`. For Claude Code *(planned, step 4)*: `ANTHROPIC_BASE_URL=http://localhost:4570`.
 
+## Model groups *(planned, from step 3)*
+
+Ask for a group by model name. The router then only routes (and fails over) inside that group. An empty group falls back to the whole pool, so a config mistake never takes the service down.
+
+| Model name | Best for | Role in your workflow |
+| --- | --- | --- |
+| `free-model` | Anything, or when unsure | — |
+| `free-model-thinking` | Planning, requirements, design, code review, writing test plans | **PM**, architect, **QA** (test design and review) |
+| `free-model-coder` | Writing and editing code, tool-heavy agent loops | **Developer** |
+| `free-model-fast` | Short quick jobs: summaries, commit messages, simple edits, QA smoke checks | helper agents, **QA** (quick checks) |
+
+Group membership lives in `pool.config.json` → `groups` (substring match on the canonical model name). The starter lists are built from measured latency, reasoning flags and model names. They are **not benchmarked for quality**. Run `npm run pool` to see who is in each group, and edit freely.
+
+### Examples
+
+Claude Code, one tool with three tiers *(needs step 4)*:
+
+```bash
+export ANTHROPIC_BASE_URL=http://localhost:4570
+export ANTHROPIC_AUTH_TOKEN=free-model-local   # any non-empty string; the server only listens on localhost
+export ANTHROPIC_API_KEY=
+export ANTHROPIC_DEFAULT_OPUS_MODEL=free-model-thinking
+export ANTHROPIC_DEFAULT_SONNET_MODEL=free-model-coder
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=free-model-fast
+claude
+```
+
+Any OpenAI-compatible client (OpenCode, Cline, Cursor…): base URL `http://localhost:4570/v1`, any non-empty API key, model `free-model-coder` (or another name from the table).
+
+```bash
+curl http://localhost:4570/v1/chat/completions -H "Content-Type: application/json" \
+  -d '{"model":"free-model-thinking","messages":[{"role":"user","content":"Write a test plan for a login form"}]}'
+```
+
+### Not supported
+
+- **No video input and no audio input.** Some free models accept them, but this proxy does not route them.
+- **Image input** only goes to routes marked `vision`; other routes are text-only.
+- Context windows differ (65K to 1M tokens). Routes too small for the prompt are skipped.
+
 ## Roadmap
 
 - [x] 0. Project scaffold
 - [x] 1. Verify access to Kilo, OpenRouter, NVIDIA, AMD
-- [ ] 2. Provider model discovery and filtering
+- [x] 2. Provider model discovery and filtering
 - [ ] 3. Router (latency, cooldown, dedupe) and OpenAI-compatible server
 - [ ] 4. Anthropic-compatible `/v1/messages`
 - [ ] 5. OpenCode CLI fallback
