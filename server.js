@@ -4,6 +4,7 @@ const { getConfig, keyStatus } = require('./config');
 const { discoverAll } = require('./providers');
 const { Router } = require('./router');
 const { attempt } = require('./upstream');
+const A = require('./anthropic');
 
 const estimateTokens = (body) => Math.ceil(JSON.stringify(body.messages || []).length / 3.5);
 const hasImages = (body) => JSON.stringify(body.messages || []).includes('"image_url"');
@@ -65,6 +66,61 @@ async function handleChat(req, res, ctx) {
   return send(res, 503, errBody(`all routes failed: ${tried.join(' | ')}`));
 }
 
+
+const aerr = (res, status, message, type = 'api_error') => send(res, status, { type: 'error', error: { type, message } });
+
+async function handleMessages(req, res, ctx) {
+  const { router, config, fetchImpl } = ctx;
+  let raw;
+  try { raw = JSON.parse(await readBody(req)); } catch { return aerr(res, 400, 'invalid JSON body', 'invalid_request_error'); }
+  if (hasVideoOrAudio(raw)) return aerr(res, 400, 'video and audio input are not supported', 'invalid_request_error');
+  const body = A.toOpenAI(raw);
+  const stream = raw.stream === true;
+  const thinking = !!(raw.thinking && raw.thinking.type === 'enabled');
+  const need = { promptTokens: A.estimateTokens(body), reserve: Math.min(body.max_tokens || 1024, 8192), tools: !!body.tools, vision: hasImages(body) };
+  let plan = router.plan(body.model, need);
+  // A real Claude name mapped to a group that isn't configured -> use the whole pool.
+  if (plan.error && plan.error.status === 404 && !String(raw.model || '').startsWith('free-model')) plan = router.plan('free-model', need);
+  if (plan.error) return aerr(res, plan.error.status, plan.error.message, plan.error.status === 404 ? 'not_found_error' : 'api_error');
+
+  const tried = [];
+  for (const route of plan.routes) {
+    const routeBody = { ...body };
+    if (routeBody.max_tokens) routeBody.max_tokens = Math.min(routeBody.max_tokens, route.maxOut || 16384);
+    const r = await attempt(route, routeBody, { keys: config.keys, timeoutMs: config.firstByteMs || 20000, fetchImpl, stream });
+    if (!r.ok) {
+      router.recordFailure(route, r.failure);
+      tried.push(`${route.key}: ${r.failure.kind} ${r.failure.status || ''} ${r.failure.msg}`.trim());
+      continue;
+    }
+    router.recordSuccess(route, r.ms);
+    const model = raw.model || 'free-model';
+    if (!stream) {
+      res.setHeader('x-free-model-route', route.key);
+      return send(res, 200, A.toAnthropic(r.json, { model, thinking }));
+    }
+    res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive', 'x-free-model-route': route.key });
+    res.on('close', () => { r.reader.cancel().catch(() => {}); });
+    const tr = new A.StreamTranslator({ model, inputTokens: A.estimateTokens(body), thinking, write: (t) => res.write(t) });
+    const parser = new A.SseParser();
+    tr.start();
+    try {
+      for (const j of parser.push(r.first)) tr.feed(j);
+      for (;;) {
+        const { done, value } = await r.reader.read();
+        if (done) break;
+        for (const j of parser.push(value)) tr.feed(j);
+      }
+      tr.end();
+    } catch (e) {
+      tr.close();
+      res.write(`event: error\ndata: ${JSON.stringify({ type: 'error', error: { type: 'api_error', message: `upstream stream broke: ${e.message}` } })}\n\n`);
+    }
+    return res.end();
+  }
+  return aerr(res, 503, `all routes failed: ${tried.join(' | ')}`);
+}
+
 function createServer({ config, router, fetchImpl = fetch }) {
   const ctx = { config, router, fetchImpl };
   return http.createServer(async (req, res) => {
@@ -75,6 +131,11 @@ function createServer({ config, router, fetchImpl = fetch }) {
       }
       if (req.method === 'GET' && (url === '/status' || url === '/')) return send(res, 200, router.status());
       if (req.method === 'POST' && url === '/v1/chat/completions') return await handleChat(req, res, ctx);
+      if (req.method === 'POST' && url === '/v1/messages') return await handleMessages(req, res, ctx);
+      if (req.method === 'POST' && url === '/v1/messages/count_tokens') {
+        let b; try { b = JSON.parse(await readBody(req)); } catch { return aerr(res, 400, 'invalid JSON body', 'invalid_request_error'); }
+        return send(res, 200, { input_tokens: A.estimateTokens(A.toOpenAI(b)) });
+      }
       return send(res, 404, errBody(`no route for ${req.method} ${url}`, 'invalid_request_error'));
     } catch (e) {
       if (!res.headersSent) send(res, 500, errBody(e.message)); else res.end();
