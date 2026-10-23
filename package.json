@@ -1,0 +1,12 @@
+{
+  "name": "my-ai-free-model",
+  "version": "0.1.0",
+  "description": "Local proxy: one \"free-model\" routed across free LLM providers with failover and cooldown",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": { "node": ">=18" },
+  "license": "MIT",
+  "private": true
+}
