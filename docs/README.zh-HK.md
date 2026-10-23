@@ -4,7 +4,7 @@
 
 [English](../README.md) | [繁體中文（台灣）](./README.zh-TW.md) | 繁體中文（香港／廣東話） | [简体中文](./README.zh-CN.md)
 
-> **狀態：🚧 開發緊。** 各個服務嘅存取已經驗證咗（步驟 1），路由器同 server 重未寫好。標咗 *（計劃中）* 嘅部分係設計，唔係已經做好嘅功能。
+> **狀態：✅ 可以用。** 步驟 0–4 已完成：服務發現、有 failover 同冷卻嘅路由器、兼容 OpenAI 嘅 `/v1/chat/completions`，同兼容 Anthropic 嘅 `/v1/messages`（已用 curl 同 Claude Code 測試）。步驟 5（OpenCode CLI 後備）暫時跳過。
 
 ## 點解要整呢個
 
@@ -16,7 +16,7 @@
 
 將支援 OpenAI 或者 Anthropic 格式嘅工具（OpenCode、Cline、Cursor、Claude Code……）指去 `localhost`，叫佢用 `free-model`。個代理會揀依家用得嘅免費模型，邊個服務出事就轉去下一個。
 
-## 運作方式 *（計劃中）*
+## 運作方式
 
 ```
 你嘅工具（model: free-model）
@@ -43,11 +43,11 @@
 | OpenRouter | `OPENROUTER_API_KEY` | 支援 tools 嘅 `:free` 模型 | 免費模型每日 50 次，儲 $10 或以上有 1000 次（跟 omfm 文檔，未再測） | ✅ 清單、傾偈 |
 | NVIDIA | `NVIDIA_API_KEY` | 手動白名單（清單冇免費標記） | 每個模型各有速率限制 | ✅ 清單 · ⏳ 傾偈 |
 | AMD | `AMD_API_KEY` | 手動白名單（DeepSeek / MiMo / GLM / Qwen3.8） | 每日 1.0 pt（點數係用量，唔係收費），每分鐘 20 次 | ✅ 清單、傾偈 |
-| OpenCode CLI | 唔使 | 已安裝嘅 `opencode` CLI 提供嘅模型 | 最後後備，淨係純文字 | ⏳ |
+| OpenCode CLI | 唔使 | 已安裝嘅 `opencode` CLI 提供嘅模型 | 最後後備，淨係純文字 | ⏭ |
 
 **關於 OpenCode：** 佢個 gateway 會拒絕直接用 HTTP 打免費額度（`FreeTierError: can only be used from within OpenCode`）。呢個項目唔會扮 OpenCode 客戶端，唯一嘅 OpenCode 路線係叫真正嘅 CLI 做後備。
 
-## 路由規則 *（計劃中）*
+## 路由規則
 
 - **次序：** 延遲最低嘅先。未有量度數據嗰陣：Kilo → OpenRouter → NVIDIA → AMD → OpenCode CLI。
 - **同一個模型喺多個 gateway 出現** 只當一條路線，唔好連續撞同一個後端。
@@ -90,7 +90,7 @@ AMD_API_KEY=
 tail -40 data/probe-result.txt
 ```
 
-### 用法 *（計劃中，步驟 3 開始）*
+### 用法
 
 ```bash
 node server.js
@@ -101,9 +101,9 @@ curl -X POST http://localhost:4570/v1/chat/completions \
   -d '{"model":"free-model","messages":[{"role":"user","content":"用中文說你好"}]}'
 ```
 
-工具設定：base URL 填 `http://localhost:4570/v1`，模型填 `free-model`。Claude Code *（計劃中，步驟 4）*：`ANTHROPIC_BASE_URL=http://localhost:4570`。
+工具設定：base URL 填 `http://localhost:4570/v1`，模型填 `free-model`。Claude Code：`ANTHROPIC_BASE_URL=http://localhost:4570`。
 
-## 模型分組 *（計劃中，步驟 3 開始）*
+## 模型分組
 
 用模型名指定分組，路由器就只會喺嗰組入面揀路線同轉路線。空嘅分組會退回成個池，所以設定寫錯咗都唔會令服務停低。
 
@@ -118,7 +118,7 @@ curl -X POST http://localhost:4570/v1/chat/completions \
 
 ### 例子
 
-Claude Code，一個工具用三個檔位 *（需要步驟 4）*：
+Claude Code，一個工具用三個檔位：
 
 ```bash
 export ANTHROPIC_BASE_URL=http://localhost:4570
@@ -149,8 +149,8 @@ curl http://localhost:4570/v1/chat/completions -H "Content-Type: application/jso
 - [x] 1. 驗證 Kilo、OpenRouter、NVIDIA、AMD 嘅存取
 - [x] 2. 各服務模型探索同過濾
 - [x] 3. 路由器（延遲、冷卻、去重）同兼容 OpenAI 嘅 server
-- [ ] 4. 兼容 Anthropic 嘅 `/v1/messages`
-- [ ] 5. OpenCode CLI 後備
+- [x] 4. 兼容 Anthropic 嘅 `/v1/messages`
+- [ ] 5. OpenCode CLI 後備 （暫時跳過，可選）
 
 ## 私隱同合理使用
 

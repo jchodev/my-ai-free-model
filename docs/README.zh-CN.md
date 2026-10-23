@@ -4,7 +4,7 @@
 
 [English](../README.md) | [繁體中文（台灣）](./README.zh-TW.md) | [繁體中文（香港／廣東話）](./README.zh-HK.md) | 简体中文
 
-> **状态：🚧 开发中。** 各服务的访问已验证（步骤 1），路由器和服务器尚未完成。标注 *（规划中）* 的内容是设计，不是已完成的功能。
+> **状态：✅ 可使用。** 步骤 0–4 已完成：服务发现、带故障切换与冷却的路由器、兼容 OpenAI 的 `/v1/chat/completions`，以及兼容 Anthropic 的 `/v1/messages`（已用 curl 和 Claude Code 测试）。步骤 5（OpenCode CLI 后备）暂时跳过。
 
 ## 为什么做这个
 
@@ -16,7 +16,7 @@
 
 把兼容 OpenAI 或 Anthropic 格式的客户端（OpenCode、Cline、Cursor、Claude Code……）指向 `localhost`，请求 `free-model` 即可。代理会挑选当前可用的免费模型，某个服务失败就换下一个。
 
-## 工作方式 *（规划中）*
+## 工作方式
 
 ```
 你的客户端（model: free-model）
@@ -43,11 +43,11 @@
 | OpenRouter | `OPENROUTER_API_KEY` | 支持 tools 的 `:free` 模型 | 免费模型每日 50 次，充值 $10 以上为 1000 次（来自 omfm 文档，未重测） | ✅ 列表、对话 |
 | NVIDIA | `NVIDIA_API_KEY` | 手动白名单（列表没有免费标记） | 每个模型各有速率限制 | ✅ 列表 · ⏳ 对话 |
 | AMD | `AMD_API_KEY` | 手动白名单（DeepSeek / MiMo / GLM / Qwen3.8） | 每日 1.0 pt（点数是用量，不是费用），每分钟 20 次 | ✅ 列表、对话 |
-| OpenCode CLI | 不需要 | 已安装的 `opencode` CLI 提供的模型 | 最后备援，仅纯文本 | ⏳ |
+| OpenCode CLI | 不需要 | 已安装的 `opencode` CLI 提供的模型 | 最后备援，仅纯文本 | ⏭ |
 
 **关于 OpenCode：** 其网关会拒绝直接以 HTTP 调用免费额度（`FreeTierError: can only be used from within OpenCode`）。本项目不会伪装成 OpenCode 客户端，唯一的 OpenCode 路线是调用真正的 CLI 作为备援。
 
-## 路由规则 *（规划中）*
+## 路由规则
 
 - **顺序：** 延迟最低者优先。尚无测量数据时：Kilo → OpenRouter → NVIDIA → AMD → OpenCode CLI。
 - **同一模型出现在多个网关** 只算一条路线，避免连续打到同一个后端。
@@ -90,7 +90,7 @@ AMD_API_KEY=
 tail -40 data/probe-result.txt
 ```
 
-### 使用方式 *（规划中，步骤 3 起）*
+### 使用方式
 
 ```bash
 node server.js
@@ -101,9 +101,9 @@ curl -X POST http://localhost:4570/v1/chat/completions \
   -d '{"model":"free-model","messages":[{"role":"user","content":"用中文说你好"}]}'
 ```
 
-客户端：base URL 设为 `http://localhost:4570/v1`，模型设为 `free-model`。Claude Code *（规划中，步骤 4）*：`ANTHROPIC_BASE_URL=http://localhost:4570`。
+客户端：base URL 设为 `http://localhost:4570/v1`，模型设为 `free-model`。Claude Code：`ANTHROPIC_BASE_URL=http://localhost:4570`。
 
-## 模型分组 *（规划中，步骤 3 起）*
+## 模型分组
 
 用模型名称指定分组，路由器就只会在该组内选择路线和切换路线。空的分组会退回整个池，所以配置写错也不会让服务停摆。
 
@@ -118,7 +118,7 @@ curl -X POST http://localhost:4570/v1/chat/completions \
 
 ### 示例
 
-Claude Code，一个工具使用三个档位 *（需要步骤 4）*：
+Claude Code，一个工具使用三个档位：
 
 ```bash
 export ANTHROPIC_BASE_URL=http://localhost:4570
@@ -149,8 +149,8 @@ curl http://localhost:4570/v1/chat/completions -H "Content-Type: application/jso
 - [x] 1. 验证 Kilo、OpenRouter、NVIDIA、AMD 的访问
 - [x] 2. 各服务模型发现与过滤
 - [x] 3. 路由器（延迟、冷却、去重）与兼容 OpenAI 的服务器
-- [ ] 4. 兼容 Anthropic 的 `/v1/messages`
-- [ ] 5. OpenCode CLI 备援
+- [x] 4. 兼容 Anthropic 的 `/v1/messages`
+- [ ] 5. OpenCode CLI 备援 （暂时跳过，可选）
 
 ## 隐私与合理使用
 

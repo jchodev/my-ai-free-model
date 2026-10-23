@@ -4,7 +4,7 @@ One local endpoint, one model name — `free-model` — that quietly routes your
 
 English | [繁體中文（台灣）](./docs/README.zh-TW.md) | [繁體中文（香港／廣東話）](./docs/README.zh-HK.md) | [简体中文](./docs/README.zh-CN.md)
 
-> **Status: 🚧 work in progress.** Provider access has been verified (step 1). The router and server are not built yet. Anything marked *(planned)* describes the design, not shipped behavior.
+> **Status: ✅ usable.** Steps 0–4 are done: provider discovery, router with failover and cooldown, OpenAI-compatible `/v1/chat/completions`, and Anthropic-compatible `/v1/messages` (tested with OpenCode-style curl and Claude Code). Step 5 (OpenCode CLI fallback) is skipped for now.
 
 ## Why this exists
 
@@ -16,7 +16,7 @@ Free LLM tiers are great on paper and annoying in practice:
 
 You point OpenAI- or Anthropic-compatible clients (OpenCode, Cline, Cursor, Claude Code…) at `localhost` and ask for `free-model`. The proxy picks a live free model, and moves on to the next one when a provider fails.
 
-## How it works *(planned)*
+## How it works
 
 ```
 Your client (model: free-model)
@@ -43,11 +43,11 @@ Your client (model: free-model)
 | OpenRouter | `OPENROUTER_API_KEY` | `:free` IDs that support tools | Free models: 50 requests/day, 1000/day with ≥ $10 credits (per the omfm docs, not re-tested) | ✅ list, chat |
 | NVIDIA | `NVIDIA_API_KEY` | Manual allowlist (the model list has no free flag) | Per-model rate limits | ✅ list · ⏳ chat |
 | AMD | `AMD_API_KEY` | Manual allowlist (DeepSeek / MiMo / GLM / Qwen3.8) | 1.0 pt/day (points are usage, not charges), 20 requests/min | ✅ list, chat |
-| OpenCode CLI | none | Models offered by the installed `opencode` CLI | Last-resort fallback, plain text only | ⏳ |
+| OpenCode CLI | none | Models offered by the installed `opencode` CLI | Last-resort fallback, plain text only | ⏭ |
 
 **About OpenCode:** its gateway rejects direct HTTP calls to the free tier (`FreeTierError: can only be used from within OpenCode`). This project does not imitate OpenCode's client. The only OpenCode route is the real CLI, as a fallback.
 
-## Routing rules *(planned)*
+## Routing rules
 
 - **Order:** lowest measured latency first. Before any measurement exists: Kilo → OpenRouter → NVIDIA → AMD → OpenCode CLI.
 - **Same model on several gateways** counts as one route, so one backend is not tried three times in a row.
@@ -90,7 +90,7 @@ Check that your keys work (already available):
 tail -40 data/probe-result.txt
 ```
 
-### Usage *(planned, from step 3)*
+### Usage
 
 ```bash
 node server.js
@@ -101,9 +101,9 @@ curl -X POST http://localhost:4570/v1/chat/completions \
   -d '{"model":"free-model","messages":[{"role":"user","content":"Say hello in Chinese"}]}'
 ```
 
-Clients: set the base URL to `http://localhost:4570/v1` and the model to `free-model`. For Claude Code *(planned, step 4)*: `ANTHROPIC_BASE_URL=http://localhost:4570`.
+Clients: set the base URL to `http://localhost:4570/v1` and the model to `free-model`. For Claude Code: `ANTHROPIC_BASE_URL=http://localhost:4570`.
 
-## Model groups *(planned, from step 3)*
+## Model groups
 
 Ask for a group by model name. The router then only routes (and fails over) inside that group. An empty group falls back to the whole pool, so a config mistake never takes the service down.
 
@@ -118,7 +118,7 @@ Group membership lives in `pool.config.json` → `groups` (substring match on th
 
 ### Examples
 
-Claude Code, one tool with three tiers *(needs step 4)*:
+Claude Code, one tool with three tiers:
 
 ```bash
 export ANTHROPIC_BASE_URL=http://localhost:4570
@@ -149,8 +149,8 @@ curl http://localhost:4570/v1/chat/completions -H "Content-Type: application/jso
 - [x] 1. Verify access to Kilo, OpenRouter, NVIDIA, AMD
 - [x] 2. Provider model discovery and filtering
 - [x] 3. Router (latency, cooldown, dedupe) and OpenAI-compatible server
-- [ ] 4. Anthropic-compatible `/v1/messages`
-- [ ] 5. OpenCode CLI fallback
+- [x] 4. Anthropic-compatible `/v1/messages`
+- [ ] 5. OpenCode CLI fallback (skipped for now, optional)
 
 ## Privacy and fair use
 
