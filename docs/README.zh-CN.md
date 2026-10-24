@@ -26,7 +26,8 @@
    ├─ POST /v1/chat/completions   OpenAI 格式，支持流式与 tool calling
    ├─ POST /v1/messages           Anthropic 格式（自动转换）
    ├─ GET  /v1/models             列出 "free-model" 及各分组
-   └─ GET  /status                各路线延迟与冷却状态
+   ├─ GET  /status                各路线延迟与冷却状态
+   └─ GET  /docs  Swagger 界面 · /openapi.json  OpenAPI 规范
         │
         ▼
  router.js  → 优先最快的可用路线，失败即冷却
@@ -150,6 +151,12 @@ curl -X POST http://localhost:4570/v1/chat/completions \
 ```
 
 客户端：base URL 设为 `http://localhost:4570/v1`，模型设为 `free-model`。Claude Code：`ANTHROPIC_BASE_URL=http://localhost:4570`。
+
+### API 文档（Swagger）
+
+服务器运行时，用浏览器打开 **http://localhost:4570/docs**。页面列出所有端点、示例请求，并有 **Try it out** 按钮，不用 curl 也能测试 `free-model`。原始 OpenAPI 3 规范在 `http://localhost:4570/openapi.json`（可导入 Postman 或 Insomnia）。
+
+页面的 Swagger UI 文件从 CDN（jsDelivr）加载，所以浏览器需要联网。服务器本身仍然零依赖，离线也能运行。
 
 ## 模型分组
 
