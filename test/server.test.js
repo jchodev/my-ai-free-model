@@ -57,3 +57,14 @@ test('streaming passes through, fails over before first byte', async () => {
     assert.match(await r.text(), /"A"[\s\S]*\[DONE\]/);
   });
 });
+
+test('OpenAPI spec and Swagger UI page', async () => {
+  await run(async () => ok('x'), async (base) => {
+    const spec = await (await fetch(`${base}/openapi.json`)).json();
+    assert.equal(spec.openapi, '3.0.3');
+    for (const p of ['/v1/models', '/v1/chat/completions', '/v1/messages', '/v1/messages/count_tokens', '/status']) assert.ok(spec.paths[p], p);
+    assert.deepEqual(spec.components.schemas.ChatRequest.properties.model.enum, ['free-model']);
+    const html = await (await fetch(`${base}/docs`)).text();
+    assert.match(html, /swagger-ui-bundle\.js/); assert.match(html, /\/openapi\.json/);
+  });
+});

@@ -26,7 +26,8 @@ Your client (model: free-model)
    ├─ POST /v1/chat/completions   OpenAI format, streaming + tool calling
    ├─ POST /v1/messages           Anthropic format (translated)
    ├─ GET  /v1/models             lists "free-model" and its groups
-   └─ GET  /status                per-route latency and cooldown
+   ├─ GET  /status                per-route latency and cooldown
+   └─ GET  /docs  Swagger UI · /openapi.json  OpenAPI spec
         │
         ▼
  router.js  → fastest live route first, cooldown on failure
@@ -150,6 +151,12 @@ curl -X POST http://localhost:4570/v1/chat/completions \
 ```
 
 Clients: set the base URL to `http://localhost:4570/v1` and the model to `free-model`. For Claude Code: `ANTHROPIC_BASE_URL=http://localhost:4570`.
+
+### API docs (Swagger)
+
+Open **http://localhost:4570/docs** in your browser while the server is running. It lists every endpoint, shows example requests, and has a **Try it out** button, so you can test `free-model` without curl. The raw OpenAPI 3 spec is at `http://localhost:4570/openapi.json` (import it into Postman or Insomnia if you like).
+
+The page loads the Swagger UI files from a CDN (jsDelivr), so the browser needs internet access. The server itself stays dependency-free and works offline.
 
 ## Model groups
 

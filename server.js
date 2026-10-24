@@ -5,6 +5,7 @@ const { discoverAll } = require('./providers');
 const { Router } = require('./router');
 const { attempt } = require('./upstream');
 const A = require('./anthropic');
+const { buildSpec, docsHtml } = require('./openapi');
 
 const estimateTokens = (body) => Math.ceil(JSON.stringify(body.messages || []).length / 3.5);
 const hasImages = (body) => JSON.stringify(body.messages || []).includes('"image_url"');
@@ -129,6 +130,8 @@ function createServer({ config, router, fetchImpl = fetch }) {
       if (req.method === 'GET' && url === '/v1/models') {
         return send(res, 200, { object: 'list', data: router.modelNames().map((id) => ({ id, object: 'model', owned_by: 'my-ai-free-model' })) });
       }
+      if (req.method === 'GET' && url === '/openapi.json') return send(res, 200, buildSpec(router.modelNames()));
+      if (req.method === 'GET' && url === '/docs') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(docsHtml()); }
       if (req.method === 'GET' && (url === '/status' || url === '/')) return send(res, 200, router.status());
       if (req.method === 'POST' && url === '/v1/chat/completions') return await handleChat(req, res, ctx);
       if (req.method === 'POST' && url === '/v1/messages') return await handleMessages(req, res, ctx);
